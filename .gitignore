@@ -132,6 +132,11 @@ dmypy.json
 models/*
 data/*
 runs/*
+pretrained/*
+nuscenes/*
+
+# Generated index files
+*.pkl
 
 # torch hipify generated files
 *_hip.*

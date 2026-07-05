@@ -193,6 +193,53 @@ torchpack dist-run -np 8 python tools/train.py configs/nuscenes/seg/fusion-bev25
 
 Note: please run `tools/test.py` separately after training to get the final evaluation metrics.
 
+### Training from Scratch (Without Pretrained Weights)
+
+If you want to train BEVFusion from scratch without downloading any pretrained weights, use the `convfuser_scratch` config:
+
+```bash
+torchpack dist-run -np 8 python tools/train.py configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/convfuser_scratch.yaml
+```
+
+This config disables both the ImageNet-pretrained Swin-T backbone and the LiDAR-only pretrained checkpoint, allowing the model to train from random initialization.
+
+For quick validation with the nuScenes-mini dataset on a single GPU (RTX 4090 16GB):
+
+```bash
+# 1. Prepare mini dataset (generate index .pkl files)
+python tools/create_data.py nuscenes \
+  --root-path ./data/nuscenes-mini \
+  --version v1.0-mini \
+  --out-dir ./data/nuscenes-mini \
+  --extra-tag nuscenes \
+  --workers 8
+
+# 2. Train on mini dataset (from scratch, single GPU)
+PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128 \
+torchpack dist-run -np 1 python tools/train.py \
+  configs/nuscenes/det/transfusion/secfpn/camera+lidar/swint_v0p075/convfuser_scratch.yaml \
+  dataset_root=data/nuscenes-mini/
+```
+
+Notes for single-GPU training:
+- Override `dataset_root=data/nuscenes-mini/` to use the mini dataset.
+- Set `samples_per_gpu=1` in the config to fit in GPU memory.
+- The `convfuser_scratch` config disables `add_depth_features` to avoid channel mismatch in the depth transform.
+
+## Modifications
+
+This fork includes the following fixes and improvements over the original BEVFusion:
+
+### Bug Fixes
+- **Data converter path fix** (`tools/data_converter/nuscenes_converter.py`): Fixed hardcoded `info_prefix` directory path that caused `.pkl` files to be written to the wrong location. The `_radar` suffix was also removed from generated filenames to match the config expectations.
+- **Hardcoded db_sampler path** (`configs/nuscenes/det/default.yaml`): Changed `info_path` from hardcoded `'data/nuscenes/'` to use `${dataset_root}`, making the ObjectPaste pipeline respect the `dataset_root` override.
+- **DepthLSSTransform channel fix** (`mmdet3d/models/vtransforms/depth_lss.py`): Added missing `use_points`, `depth_input`, `height_expand`, `add_depth_features` parameters to `DepthLSSTransform.__init__()` so config-level overrides of these fields actually take effect.
+- **Graceful optional imports** (`mmdet3d/ops/__init__.py`, `mmdet3d/models/backbones/__init__.py`): Made `feature_decorator` (experimental radar CUDA op) and `radar_encoder` imports optional, preventing import errors when their dependencies are missing.
+- **yapf compatibility** (`setup.cfg`/`requirements`): Fixed `TypeError: FormatCode() got an unexpected keyword argument 'verify'` by downgrading yapf to `<0.40`.
+
+### New Features
+- **`convfuser_scratch.yaml`**: A no-pretrain-weight config variant for training BEVFusion from random initialization, with reduced batch size (`samples_per_gpu=1`) and disabled class-balanced sampling (`CBGSDataset`) suitable for single-GPU debugging.
+
 ## Deployment on TensorRT
 [CUDA-BEVFusion](https://github.com/NVIDIA-AI-IOT/Lidar_AI_Solution/tree/master/CUDA-BEVFusion): Best practice for TensorRT, which provides INT8 acceleration solutions and achieves 25fps on ORIN.
 

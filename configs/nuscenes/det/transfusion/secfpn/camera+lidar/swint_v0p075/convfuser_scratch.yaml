@@ -1,0 +1,29 @@
+model:
+  encoders:
+    camera:
+      backbone:
+        init_cfg: null
+      vtransform:
+        add_depth_features: false
+  fuser:
+    type: ConvFuser
+    in_channels: [80, 256]
+    out_channels: 256
+
+load_from: null
+
+data:
+  samples_per_gpu: 1
+  workers_per_gpu: 2
+  train:
+    type: NuScenesDataset
+    dataset: null
+    dataset_root: ${dataset_root}
+    ann_file: ${dataset_root + "nuscenes_infos_train.pkl"}
+    pipeline: ${train_pipeline}
+    object_classes: ${object_classes}
+    map_classes: ${map_classes}
+    modality: ${input_modality}
+    test_mode: false
+    use_valid_flag: true
+    box_type_3d: LiDAR
