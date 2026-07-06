@@ -13,7 +13,8 @@ from mmdet3d.runner import CustomEpochBasedRunner
 
 from mmdet3d.utils import get_root_logger
 from mmdet.core import DistEvalHook
-from mmdet.datasets import build_dataloader, build_dataset, replace_ImageToTensor
+from mmdet.datasets import build_dataloader, replace_ImageToTensor
+from mmdet3d.datasets import build_dataset
 
 
 def train_model(

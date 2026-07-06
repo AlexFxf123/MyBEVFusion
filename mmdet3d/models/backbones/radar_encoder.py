@@ -18,7 +18,10 @@ except ImportError:
     feature_decorator = None
 from mmcv.cnn.bricks.non_local import NonLocal2d
 
-from flash_attn.flash_attention import FlashMHA
+try:
+    from flash_attn.flash_attention import FlashMHA
+except ImportError:
+    FlashMHA = None
 
 
 __all__ = ["RadarFeatureNet", "RadarEncoder"]

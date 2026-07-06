@@ -206,6 +206,7 @@ class PointPillarsScatter(nn.Module):
 
     def forward(self, voxel_features, coords, batch_size):
         # batch_canvas will be the final output.
+        batch_size = int(batch_size)
         batch_canvas = []
         for batch_itt in range(batch_size):
             # Create the canvas for this sample
